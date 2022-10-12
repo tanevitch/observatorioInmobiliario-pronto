@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from urllib.parse import quote
 
 from rdflib import BNode, Graph, Literal, Namespace, URIRef
@@ -86,3 +87,15 @@ class String(Literal):
 
     def __new__(cls, value):
         return super().__new__(cls, value, datatype=XSD.string)
+
+def default_to_BNode(func):
+    """
+    Decorator that returns a BNode if the URI creation fails by a
+    KeyError.
+    """
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except KeyError:
+            return BNode()
+    return wrapper

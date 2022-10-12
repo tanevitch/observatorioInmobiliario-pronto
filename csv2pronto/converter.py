@@ -1,6 +1,6 @@
 from contextlib import suppress
 
-from rdflib import Graph, URIRef
+from rdflib import BNode, Graph, IdentifiedNode, URIRef
 from rdflib.namespace._DC import DC
 from rdflib.namespace._FOAF import FOAF
 from rdflib.namespace._RDF import RDF
@@ -17,11 +17,10 @@ from helpers import (
     SafeGraph,
     SafeNamespace,
     String,
+    default_to_BNode
 )
 
-PR = SafeNamespace(
-    "http://www.semanticweb.org/felipe/ontologies/2022/8/untitled-ontology-21#"
-)
+PR = SafeNamespace("https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl")
 SIOC = SafeNamespace("http://rdfs.org/sioc/ns#")
 GR = SafeNamespace("http://purl.org/goodrelations/v1#")
 REC = SafeNamespace("https://w3id.org/rec/core/")
@@ -47,10 +46,14 @@ def create_graph(row: dict) -> Graph:
     return g
 
 
-def add_listing(g: Graph, row: dict) -> URIRef:
-    """Add listing to the graph `g` and return the listing's `URIRef`."""
+def add_listing(g: Graph, row: dict) -> IdentifiedNode:
+    """Add listing to the graph `g` and return the listing's `IdentifiedNode`."""
 
-    listing: URIRef = PR[f"{row['site']}_{row['listing_id']}_listing"]
+    @default_to_BNode
+    def _create_listing():
+        return PR[f"{row['site']}_{row['listing_id']}_listing"]
+
+    listing: IdentifiedNode = _create_listing()
     g.add((listing, RDF.type, PR.RealEstateListing))
 
     g.add((listing, SIOC.link, AnyURI(row.get("url"))))
@@ -64,7 +67,7 @@ def add_listing(g: Graph, row: dict) -> URIRef:
 
     ###
 
-    site: URIRef = PR[row["site"]]
+    site: IdentifiedNode = PR[row["site"]]
     g.add((listing, SIOC.has_space, site))
     g.add((site, SIOC.space_of, listing))
 
@@ -77,11 +80,11 @@ def add_listing(g: Graph, row: dict) -> URIRef:
     ###
 
     if row.get("price"):
-        price: URIRef = add_price(g, row["price"], row["currency"], "BASE")
+        price: IdentifiedNode = add_price(g, row["price"], row["currency"], "BASE")
         g.add((listing, GR.hasPriceSpecification, price))
 
     if row.get("maintenance_fee"):
-        expenses: URIRef = add_price(
+        expenses: IdentifiedNode = add_price(
             g,
             row.get("maintenance_fee", ""),
             row.get("maintenance_fee_currency", ""),
@@ -95,10 +98,14 @@ def add_listing(g: Graph, row: dict) -> URIRef:
     return listing
 
 
-def add_price(g: Graph, value: float, currency: str, p_type: str) -> URIRef:
-    """Add price to the graph `g` and return the price's `URIRef`."""
+def add_price(g: Graph, value: float, currency: str, p_type: str) -> IdentifiedNode:
+    """Add price to the graph `g` and return the price's `IdentifiedNode`."""
 
-    price: URIRef = PR[f"{value}_{currency}_{p_type}"]
+    @default_to_BNode
+    def _create_price():
+        return PR[f"{value}_{currency}_{p_type}"]
+
+    price: IdentifiedNode = _create_price()
     g.add((price, RDF.type, GR.UnitPriceSpecification))
     g.add((price, GR.hasCurrencyValue, Float(price)))
     g.add((price, GR.hasCurrency, String(currency)))
@@ -107,19 +114,22 @@ def add_price(g: Graph, value: float, currency: str, p_type: str) -> URIRef:
     return price
 
 
-def add_agent(g: Graph, row: dict) -> tuple[URIRef, URIRef] | tuple[None, None]:
+def add_agent(g: Graph, row: dict) -> tuple[IdentifiedNode, IdentifiedNode]:
     """
     Add real estate agent to the graph `g` and return a tuple with the
-    `URIRef`s of the agent and its user account.
+    `IdentifiedNode`s of the agent and its user account.
     """
 
-    uri_name: str = row.get("advertiser_name") or row.get("advertiser_id", "")
+    @default_to_BNode
+    def _create_agent():
+        return PR[row["advertiser_name"]]
 
-    if not uri_name:
-        return None, None
+    @default_to_BNode
+    def _create_account():
+        return PR[f"{row['site']}_{row['advertiser_id']}"]
 
-    agent: URIRef = PR[row["advertiser_name"]]
-    account: URIRef = PR[f"{row['site']}_{row['advertiser_id']}"]
+    agent: IdentifiedNode = _create_agent()
+    account: IdentifiedNode = _create_account()
 
     g.add((agent, RDF.type, FOAF.Agent))
     g.add((account, RDF.type, SIOC.UserAccount))
@@ -132,14 +142,14 @@ def add_agent(g: Graph, row: dict) -> tuple[URIRef, URIRef] | tuple[None, None]:
     return agent, account
 
 
-def add_real_estate(g: Graph, row: dict) -> URIRef:
+def add_real_estate(g: Graph, row: dict) -> IdentifiedNode:
     """
     Add real estate to the graph `g` and return the real estate's
-    `URIRef`.
+    `IdentifiedNode`.
     """
 
-    real_estate: URIRef = PR[f"{row['site']}_{row['listing_id']}_real_estate"]
-    space: URIRef = PR[f"{row['site']}_{row['listing_id']}_space"]
+    real_estate: IdentifiedNode = PR[f"{row['site']}_{row['listing_id']}_real_estate"]
+    space: IdentifiedNode = PR[f"{row['site']}_{row['listing_id']}_space"]
 
     g.add((real_estate, RDF.type, REC.RealEstate))
     g.add((space, RDF.type, REC.Space))
@@ -161,7 +171,7 @@ def add_real_estate(g: Graph, row: dict) -> URIRef:
 
     # add features
     for feature, value in row["features"].items():
-        f: URIRef = PR[feature]
+        f: IdentifiedNode = PR[feature]
         g.add((f, RDF.type, PR.Feature))
         g.add((space, PR.has_feature, f))
         g.add((f, RDFS.label, String(feature)))
@@ -184,11 +194,11 @@ def add_real_estate(g: Graph, row: dict) -> URIRef:
         add_room(g, space, row, room, room_class)
 
     # add regions
-    neighborhood: URIRef = PR[
+    neighborhood: IdentifiedNode = PR[
         f"{row['province']}_{row['district']}_{row['neighborhood']}"
     ]
-    district: URIRef = PR[f"{row['province']}_{row['district']}"]
-    province: URIRef = PR[f"{row['province']}"]
+    district: IdentifiedNode = PR[f"{row['province']}_{row['district']}"]
+    province: IdentifiedNode = PR[f"{row['province']}"]
 
     g.add((neighborhood, RDF.type, REC.Region))
     g.add((district, RDF.type, REC.Region))
@@ -209,13 +219,13 @@ def add_real_estate(g: Graph, row: dict) -> URIRef:
     return real_estate
 
 
-def add_surface(g: Graph, row: dict, s_type: str) -> URIRef:
-    """Add surface to the graph `g` and return the surface's `URIRef`."""
+def add_surface(g: Graph, row: dict, s_type: str) -> IdentifiedNode:
+    """Add surface to the graph `g` and return the surface's `IdentifiedNode`."""
 
     value = row[f"{s_type}_surface"] or row[f"reconstructed_{s_type}_surface"]
     unit = row[f"{s_type}_surface_unit"] or row[f"reconstructed_{s_type}_surface_unit"]
 
-    surface: URIRef = PR[f"{value}_{unit}_{s_type}"]
+    surface: IdentifiedNode = PR[f"{value}_{unit}_{s_type}"]
 
     g.add((surface, RDF.type, PR.SizeSpecification))
     g.add((surface, PR.has_surface_value, Float(value)))
@@ -225,14 +235,19 @@ def add_surface(g: Graph, row: dict, s_type: str) -> URIRef:
     return surface
 
 
-def add_room(g: Graph, space: URIRef, row: dict, room: str, room_class: URIRef) -> None:
+def add_room(g: Graph, space: IdentifiedNode, row: dict, room: str, room_class: IdentifiedNode) -> None:
     """Add rooms to the graph `g`."""
 
     amnt = row[f"{room}_amnt"]
     if not amnt:
         return
 
+    def _create_room():
+        fragment = getattr(space, "fragment", None)
+        if not fragment: return BNode()
+        return PR[f"{fragment}_{room}_{i}"]
+
     for i in amnt:
-        r: URIRef = PR[f"{space.fragment}_{room}_{i}"]
+        r: IdentifiedNode = _create_room()
         g.add((r, RDF.type, room_class))
         g.add((space, PR.has_part, r))
