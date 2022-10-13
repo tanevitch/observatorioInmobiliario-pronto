@@ -1,7 +1,8 @@
 import ast
 from contextlib import suppress
 
-from rdflib import BNode, Graph, URIRef
+import datetime
+from rdflib import BNode, Graph
 from rdflib.namespace._DC import DC
 from rdflib.namespace._FOAF import FOAF
 from rdflib.namespace._RDF import RDF
@@ -15,15 +16,16 @@ from helpers import (
     Double,
     Float,
     Integer,
+    Node,
     SafeGraph,
     SafeNamespace,
     String,
     default_to_BNode,
 )
 
-Node = URIRef | BNode
-
-PR = SafeNamespace("https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl")
+PR = SafeNamespace(
+    "https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#"
+)
 SIOC = SafeNamespace("http://rdfs.org/sioc/ns#")
 GR = SafeNamespace("http://purl.org/goodrelations/v1#")
 REC = SafeNamespace("https://w3id.org/rec/core/")
@@ -47,7 +49,6 @@ def create_graph(row: dict) -> Graph:
     g.add((agent, PR.manages, real_estate))
 
     return g
-
 
 def add_listing(g: Graph, row: dict) -> Node:
     """Add listing to the graph `g` and return the listing's `Node`."""
@@ -77,9 +78,15 @@ def add_listing(g: Graph, row: dict) -> Node:
 
     ###
 
-    g.add((listing, SIOC.read_at, DateTime(row.get("date_extracted"))))
-    g.add((listing, DC.date, DateTime(row.get("date_published"))))
     g.add((listing, SIOC.id, String(row.get("listing_id"))))
+
+    if row.get("date_extracted"):
+        date = str_to_datetime(row["date_extracted"])
+        g.add((listing, SIOC.read_at, DateTime(date)))
+
+    if row.get("date_published"):
+        date = str_to_datetime(row["date_published"])
+        g.add((listing, DC.date, DateTime(date)))
 
     ###
 
@@ -111,7 +118,7 @@ def add_price(g: Graph, value: float, currency: str, p_type: str) -> Node:
 
     price: Node = _create_price()
     g.add((price, RDF.type, GR.UnitPriceSpecification))
-    g.add((price, GR.hasCurrencyValue, Float(price)))
+    g.add((price, GR.hasCurrencyValue, Float(value)))
     g.add((price, GR.hasCurrency, String(currency)))
     g.add((price, GR.priceType, String(p_type)))
 
@@ -168,21 +175,29 @@ def add_real_estate(g: Graph, row: dict) -> Node:
 
     g.add((real_estate, REC.includes, space))
     g.add((space, SDO.address, String(row.get("address"))))
-    g.add((space, SDO.latitude, Double(row.get("latitude"))))
-    g.add((space, SDO.longitude, Double(row.get("longitude"))))
+    g.add((space, SDO.latitude, Double(row.get("latitude") or None)))
+    g.add((space, SDO.longitude, Double(row.get("longitude") or None)))
 
-    g.add((space, SDO.yearBuilt, Integer(row.get("year_built"))))
+    if row.get("year_built"):
+        g.add((space, SDO.yearBuilt, Integer(int(float(row.get("year_built", 0))))))
 
-    g.add((space, PR.is_brand_new, Boolean(row.get("is_new_property"))))
-    g.add((space, PR.is_finished, Boolean(row.get("is_finished"))))
-    g.add((space, PR.is_studio_apartment, Boolean(row.get("is_studio_apartment"))))
+    is_new_property = row.get("is_new_property")
+    is_finished = row.get("is_finished")
+    is_studio_apartment = row.get("is_studio_apartment")
+    if is_new_property != "":
+        g.add((space, PR.is_brand_new, Boolean(is_new_property)))
+    if is_finished != "":
+        g.add((space, PR.is_finished, Boolean(is_finished)))
+    if is_studio_apartment != "":
+        g.add((space, PR.is_studio_apartment, Boolean(row.get("is_studio_apartment"))))
+
     g.add((space, PR.luminosity, String(row.get("luminosity"))))
     g.add((space, PR.orientation, String(row.get("orientation"))))
     g.add((space, PR.disposition, String(row.get("disposition"))))
     g.add((space, PR.property_type, String(row.get("property_type"))))
 
     # add features
-    features: dict = ast.literal_eval(row.get("features", "{}"))
+    features: dict = ast.literal_eval(row.get("features") or "{}")
     for feature, value in features.items():
         f: Node = PR[feature]
         g.add((f, RDF.type, PR.Feature))
@@ -193,10 +208,14 @@ def add_real_estate(g: Graph, row: dict) -> Node:
     # add surfaces
     for s in ["total", "covered", "uncovered", "land"]:
         with suppress(KeyError):
-            g.add((space, PR.hasSizeSpecification, add_surface(g, row, s)))
+            value = row[f"{s}_surface"] or row[f"reconstructed_{s}_surface"]
+            unit = row[f"{s}_surface_unit"] or row[f"reconstructed_{s}_surface_unit"]
+
+            if value and unit:
+                add_surface(g, space, value, unit, s)
 
     # add amount of rooms
-    g.add((space, PR.has_amount_of_rooms, Integer(row["room_amnt"])))
+    g.add((space, PR.has_amount_of_rooms, Integer(row["room_amnt"] or None)))
     rooms: dict[str, Node] = {
         "bath": REC.Bathroom,
         "garage": REC.Garage,
@@ -218,7 +237,6 @@ def add_real_estate(g: Graph, row: dict) -> Node:
     @default_to_BNode
     def _create_province():
         return PR[row["province"]]
-
 
     neighborhood: Node = _create_neighborhood()
     district: Node = _create_district()
@@ -243,11 +261,8 @@ def add_real_estate(g: Graph, row: dict) -> Node:
     return real_estate
 
 
-def add_surface(g: Graph, row: dict, s_type: str) -> Node:
+def add_surface(g: Graph, space: Node, value: float, unit: str, s_type: str) -> Node:
     """Add surface to the graph `g` and return the surface's `Node`."""
-
-    value = row[f"{s_type}_surface"] or row[f"reconstructed_{s_type}_surface"]
-    unit = row[f"{s_type}_surface_unit"] or row[f"reconstructed_{s_type}_surface_unit"]
 
     surface: Node = PR[f"{value}_{unit}_{s_type}"]
 
@@ -255,6 +270,8 @@ def add_surface(g: Graph, row: dict, s_type: str) -> Node:
     g.add((surface, PR.has_surface_value, Float(value)))
     g.add((surface, GR.has_unit_of_measurement, String(value)))
     g.add((surface, PR.surface_type, String(s_type)))
+
+    g.add((space, PR.hasSizeSpecification, surface))
 
     return surface
 
@@ -272,10 +289,20 @@ def add_room(g: Graph, space: Node, row: dict, room: str, room_class: Node) -> N
 
     def _create_room():
         fragment = getattr(space, "fragment", None)
-        if not fragment: return BNode()
+        if not fragment:
+            return BNode()
         return PR[f"{fragment}_{room}_{i}"]
 
     for i in range(amnt):
         r: Node = _create_room()
         g.add((r, RDF.type, room_class))
         g.add((space, PR.has_part, r))
+
+def str_to_datetime(s: str) -> datetime.datetime:
+    """
+    Return a `datetime` object from a string `s` in the format
+    %a, %d %b %Y %H:%M:%S %Z.
+
+    Example: "Tue, 01 Jun 2021 19:29:12 GMT"
+    """
+    return datetime.datetime.strptime(s, "%a, %d %b %Y %H:%M:%S %Z")

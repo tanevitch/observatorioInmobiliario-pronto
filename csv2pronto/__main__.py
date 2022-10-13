@@ -1,6 +1,9 @@
 """ Convert a CSV file to an RDF file following the Pronto ontology. """
 
+# import multiprocessing
 import argparse
+# import concurrent
+# import concurrent.futures
 import csv
 import logging
 
@@ -54,6 +57,16 @@ def main() -> None:
 
         for row in csv_reader:
             graph += create_graph(row)
+
+        # with multiprocessing.Pool() as pool:
+        #     graphs = pool.map(create_graph, csv_reader)
+        #     for g in graphs:
+        #         graph += g
+
+        # with concurrent.futures.ProcessPoolExecutor() as executor:
+        #     graphs = executor.map(create_graph, csv_reader)
+        #     for g in graphs:
+        #         graph += g
 
     graph.serialize(args.output, format=args.format)
 
