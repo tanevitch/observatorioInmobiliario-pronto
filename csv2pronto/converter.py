@@ -1,7 +1,7 @@
 import ast
 from contextlib import suppress
 
-import datetime
+import dateutil.parser as dateparser
 from rdflib import BNode, Graph
 from rdflib.namespace._DC import DC
 from rdflib.namespace._FOAF import FOAF
@@ -81,11 +81,11 @@ def add_listing(g: Graph, row: dict) -> Node:
     g.add((listing, SIOC.id, String(row.get("listing_id"))))
 
     if row.get("date_extracted"):
-        date = str_to_datetime(row["date_extracted"])
+        date = dateparser.parse(row["date_extracted"])
         g.add((listing, SIOC.read_at, DateTime(date)))
 
     if row.get("date_published"):
-        date = str_to_datetime(row["date_published"])
+        date = dateparser.parse(row["date_published"])
         g.add((listing, DC.date, DateTime(date)))
 
     ###
@@ -297,12 +297,3 @@ def add_room(g: Graph, space: Node, row: dict, room: str, room_class: Node) -> N
         r: Node = _create_room()
         g.add((r, RDF.type, room_class))
         g.add((space, PR.has_part, r))
-
-def str_to_datetime(s: str) -> datetime.datetime:
-    """
-    Return a `datetime` object from a string `s` in the format
-    %a, %d %b %Y %H:%M:%S %Z.
-
-    Example: "Tue, 01 Jun 2021 19:29:12 GMT"
-    """
-    return datetime.datetime.strptime(s, "%a, %d %b %Y %H:%M:%S %Z")
