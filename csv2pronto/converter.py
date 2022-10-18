@@ -61,8 +61,8 @@ def add_listing(g: Graph, row: dict) -> Node:
     g.add((listing, RDF.type, PR.RealEstateListing))
 
     g.add((listing, SIOC.link, AnyURI(row.get("url"))))
-    g.add((listing, GR.name, String(row.get("title"))))
-    g.add((listing, GR.description, String(row.get("description"))))
+    g.add((listing, RDFS.label, String(row.get("title"))))
+    g.add((listing, RDFS.comment, String(row.get("description"))))
 
     ###
 
@@ -147,7 +147,7 @@ def add_agent(g: Graph, row: dict) -> tuple[Node, Node]:
 
     g.add((account, SIOC.id, String(row["advertiser_id"])))
     g.add((account, SIOC.name, String(row["advertiser_name"])))
-    g.add((agent, SIOC.account, account))
+    g.add((agent, FOAF.account, account))
     g.add((account, SIOC.account_of, agent))
 
     return agent, account
@@ -250,13 +250,9 @@ def add_real_estate(g: Graph, row: dict) -> Node:
     g.add((district, RDFS.label, String(row["district"])))
     g.add((province, RDFS.label, String(row["province"])))
 
-    g.add((space, REC.located_in, neighborhood))
-    g.add((neighborhood, REC.located_in, district))
-    g.add((district, REC.located_in, province))
-
-    g.add((neighborhood, REC.location_of, space))
-    g.add((district, REC.location_of, neighborhood))
-    g.add((province, REC.location_of, district))
+    g.add((space, REC.locatedIn, neighborhood))
+    g.add((neighborhood, REC.locatedIn, district))
+    g.add((district, REC.locatedIn, province))
 
     return real_estate
 
@@ -296,4 +292,4 @@ def add_room(g: Graph, space: Node, row: dict, room: str, room_class: Node) -> N
     for i in range(amnt):
         r: Node = _create_room()
         g.add((r, RDF.type, room_class))
-        g.add((space, PR.has_part, r))
+        g.add((space, REC.hasPart, r))
