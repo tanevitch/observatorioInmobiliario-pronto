@@ -3,7 +3,6 @@
 import argparse
 import csv
 from io import TextIOWrapper
-import logging
 
 import rdflib
 
@@ -13,7 +12,7 @@ from converter import create_graph
 def main() -> None:
     args: argparse.Namespace = parse_args()
 
-    with open(args.input, "r", encoding="utf-8") as csv_file:
+    with open(args.source, "r", encoding="utf-8") as csv_file:
         graph: rdflib.Graph = rdflib.Graph()
 
         graph.parse(args.ontology)
@@ -21,7 +20,7 @@ def main() -> None:
         for row in progressBar(csv_file):
             graph += create_graph(row)
 
-    graph.serialize(args.output, format=args.format)
+    graph.serialize(args.destination, format=args.format)
 
 
 def progressBar(

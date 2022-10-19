@@ -2,7 +2,7 @@ import ast
 from contextlib import suppress
 
 import dateutil.parser as dateparser
-from rdflib import BNode, Graph
+from rdflib import BNode, Graph, URIRef
 from rdflib.namespace._DC import DC
 from rdflib.namespace._FOAF import FOAF
 from rdflib.namespace._RDF import RDF
@@ -29,6 +29,7 @@ PR = SafeNamespace(
 SIOC = SafeNamespace("http://rdfs.org/sioc/ns#")
 GR = SafeNamespace("http://purl.org/goodrelations/v1#")
 REC = SafeNamespace("https://w3id.org/rec/core/")
+BUILDING = SafeNamespace("https://w3id.org/rec/building/")
 
 
 def create_graph(row: dict) -> Graph:
@@ -50,6 +51,7 @@ def create_graph(row: dict) -> Graph:
 
     return g
 
+
 def add_listing(g: Graph, row: dict) -> Node:
     """Add listing to the graph `g` and return the listing's `Node`."""
 
@@ -60,7 +62,8 @@ def add_listing(g: Graph, row: dict) -> Node:
     listing: Node = _create_listing()
     g.add((listing, RDF.type, PR.RealEstateListing))
 
-    g.add((listing, SIOC.link, AnyURI(row.get("url"))))
+    if row.get("url"):
+        g.add((listing, SIOC.link, URIRef(row["url"])))
     g.add((listing, RDFS.label, String(row.get("title"))))
     g.add((listing, RDFS.comment, String(row.get("description"))))
 
@@ -217,10 +220,10 @@ def add_real_estate(g: Graph, row: dict) -> Node:
     # add amount of rooms
     g.add((space, PR.has_amount_of_rooms, Integer(row["room_amnt"] or None)))
     rooms: dict[str, Node] = {
-        "bath": REC.Bathroom,
-        "garage": REC.Garage,
-        "bed": REC.Bedroom,
-        "toilette": REC.Toilet,
+        "bath": BUILDING.Bathroom,
+        "garage": BUILDING.Garage,
+        "bed": BUILDING.Bedroom,
+        "toilette": BUILDING.Toilet,
     }
     for room, room_class in rooms.items():
         add_room(g, space, row, room, room_class)
