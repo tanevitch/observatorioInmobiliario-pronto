@@ -1,9 +1,48 @@
+"""Helper structures for the `csv2pronto` module."""
+
 from urllib.parse import quote
 
 from rdflib import BNode, Graph, Literal, Namespace, URIRef
 from rdflib.namespace._XSD import XSD
 
+
+# Type definitions
+
+
 Node = URIRef | BNode
+
+
+# Null Objects
+
+
+class NoneLiteral(Literal):
+    """Class that represents the `Literal` of a None value."""
+
+    def __bool__(self):
+        return False
+
+    def __len__(self):
+        return 0
+
+
+class NoneNode(BNode):
+    """
+    Class that represents a `Node` that is None.
+
+    Instances of this class indicate the absence of knowledge.
+    Triplets with this class as a subject or object should never be
+    considered when building a knowledge graph.
+    """
+
+    def __bool__(self):
+        return False
+
+    def __len__(self):
+        return 0
+
+
+# Wrappers considering None values
+
 
 class SafeNamespace(Namespace):
     """Namespace that builds URIs with urllib.parse.quote()"""
@@ -20,16 +59,6 @@ class SafeGraph(Graph):
             super().add(triple)
 
 
-class NoneLiteral(Literal):
-    """Class that represents the `Literal` of a None value."""
-
-    def __bool__(self):
-        return False
-
-    def __len__(self):
-        return 0
-
-
 class SafeLiteral(Literal):
     """Literal that returns a NoneLiteral if the value is None"""
 
@@ -39,53 +68,37 @@ class SafeLiteral(Literal):
         return super().__new__(cls, value, *args, **kwargs)
 
 
-class AnyURI(SafeLiteral):
-    """A `Literal` of type `XSD.anyURI`."""
-
-    def __new__(cls, value):
-        return super().__new__(cls, value, datatype=XSD.anyURI)
+# Helper methods
 
 
-class Boolean(SafeLiteral):
-    """A `Literal` of type `XSD.boolean`."""
-
-    def __new__(cls, value):
-        return super().__new__(cls, value, datatype=XSD.boolean)
+def Boolean(value) -> SafeLiteral:
+    "A `Literal` of type `XSD.boolean`"
+    return SafeLiteral(value, datatype=XSD.boolean)
 
 
-class DateTime(SafeLiteral):
-    """A `Literal` of type `XSD.dateTime`."""
-
-    def __new__(cls, value):
-        return super().__new__(cls, value, datatype=XSD.dateTime)
+def DateTime(value) -> SafeLiteral:
+    "A `Literal` of type `XSD.dateTime`"
+    return SafeLiteral(value, datatype=XSD.dateTime)
 
 
-class Double(SafeLiteral):
-    """A `Literal` of type `XSD.double`."""
-
-    def __new__(cls, value):
-        return super().__new__(cls, value, datatype=XSD.double)
+def Double(value) -> SafeLiteral:
+    "A `Literal` of type `XSD.double`"
+    return SafeLiteral(value, datatype=XSD.double)
 
 
-class Float(SafeLiteral):
-    """A `Literal` of type `XSD.float`."""
-
-    def __new__(cls, value):
-        return super().__new__(cls, value, datatype=XSD.float)
+def Float(value) -> SafeLiteral:
+    "A `Literal` of type `XSD.float`"
+    return SafeLiteral(value, datatype=XSD.float)
 
 
-class Integer(SafeLiteral):
-    """A `Literal` of type `XSD.integer`."""
-
-    def __new__(cls, value):
-        return super().__new__(cls, value, datatype=XSD.integer)
+def Integer(value) -> SafeLiteral:
+    "A `Literal` of type `XSD.integer`"
+    return SafeLiteral(value, datatype=XSD.integer)
 
 
-class String(SafeLiteral):
-    """A `Literal` of type `XSD.string`."""
-
-    def __new__(cls, value):
-        return super().__new__(cls, value, datatype=XSD.string)
+def String(value) -> SafeLiteral:
+    "A `Literal` of type `XSD.string`"
+    return SafeLiteral(value, datatype=XSD.string)
 
 
 def default_to_BNode(func):
