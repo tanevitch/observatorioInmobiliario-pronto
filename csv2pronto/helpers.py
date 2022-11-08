@@ -114,3 +114,17 @@ def default_to_BNode(func):
             return BNode()
 
     return wrapper
+
+def default_to_NoneNode(func):
+    """
+    Decorator that returns a `NoneNode` if the URI creation raises a
+    `KeyError`.
+    """
+
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except KeyError:
+            return NoneNode()
+
+    return wrapper

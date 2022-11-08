@@ -22,6 +22,7 @@ from helpers import (
     SafeNamespace,
     String,
     default_to_BNode,
+    default_to_NoneNode,
 )
 
 PR = SafeNamespace(
@@ -57,7 +58,7 @@ def add_listing(g: Graph, row: dict) -> Node:
     """Add listing to the graph `g` and return the listing's `Node`."""
 
     # https://www.w3.org/TR/cooluris/
-    @default_to_BNode # sacar bnode
+    @default_to_BNode  # sacar bnode
     def _create_listing():
         return PR[f"{row['site']}_{row['listing_id']}_listing"]
         # argenprop_12333_listing
@@ -124,7 +125,7 @@ def add_price(g: Graph, value: float, currency: str, p_type: str) -> Node:
     def _create_price():
         return PR[f"{value}_{currency}_{p_type}"]
         # hacer independiente por cada listing
-        #https:.../pronto.owl#123.45_USD_BASE
+        # https:.../pronto.owl#123.45_USD_BASE
 
     price: Node = _create_price()
     g.add((price, RDF.type, GR.UnitPriceSpecification))
@@ -141,11 +142,11 @@ def add_agent(g: Graph, row: dict) -> tuple[Node, Node]:
     `Node`s of the agent and its user account.
     """
 
-    @default_to_BNode # sacar bnode y todas las tripletas
+    @default_to_NoneNode
     def _create_agent():
         return PR[row["advertiser_name"]]
 
-    @default_to_BNode # si el id ya se uso y tengo el nombre del agente en otra parte, listo
+    @default_to_BNode  # si el id ya se uso y tengo el nombre del agente en otra parte, listo
     def _create_account():
         return PR[f"{row['site']}_{row['advertiser_id']}"]
 
@@ -169,18 +170,18 @@ def add_real_estate(g: Graph, row: dict) -> Node:
     `Node`.
     """
 
-    @default_to_BNode # si no tengo site o listing_id: default_to_incremental
+    @default_to_BNode  # si no tengo site o listing_id: default_to_incremental
     def _create_real_estate():
         return PR[f"{row['site']}_{row['listing_id']}_real_estate"]
         # real estate: argenprop_12333_real_estate
         # listing: argenprop_12333_listing
 
-    @default_to_BNode # idem real estate
+    @default_to_BNode  # idem real estate
     def _create_space():
         return PR[f"{row['site']}_{row['listing_id']}_space"]
 
     real_estate: Node = _create_real_estate()
-    space: Node = _create_space() # si un real estate no tiene space: 
+    space: Node = _create_space()  # si un real estate no tiene space:
 
     g.add((real_estate, RDF.type, REC.RealEstate))
     g.add((space, RDF.type, REC.Space))
@@ -239,17 +240,15 @@ def add_real_estate(g: Graph, row: dict) -> Node:
 
     # add regions
 
-
-    ## que no sean bnodes. Ninguno. Si no tengo alguno, es que no se donde esta.
-    @default_to_BNode
+    @default_to_NoneNode
     def _create_neighborhood():
         return PR[f"{row['province']}_{row['district']}_{row['neighborhood']}"]
 
-    @default_to_BNode
+    @default_to_NoneNode
     def _create_district():
         return PR[f"{row['province']}_{row['district']}"]
 
-    @default_to_BNode
+    @default_to_NoneNode
     def _create_province():
         return PR[row["province"]]
 
@@ -265,15 +264,9 @@ def add_real_estate(g: Graph, row: dict) -> Node:
     g.add((district, RDFS.label, String(row["district"])))
     g.add((province, RDFS.label, String(row["province"])))
 
-
-
-    # si alguno no lo tengo, no lo pongo.
-    # añadir un NullNode.
     g.add((space, REC.locatedIn, neighborhood))
     g.add((space, REC.locatedIn, district))
     g.add((space, REC.locatedIn, province))
-
-
 
     g.add((neighborhood, REC.locatedIn, district))
     g.add((neighborhood, REC.locatedIn, province))
