@@ -57,13 +57,12 @@ def create_graph(row: dict) -> Graph:
 def add_listing(g: Graph, row: dict) -> Node:
     """Add listing to the graph `g` and return the listing's `Node`."""
 
-    # https://www.w3.org/TR/cooluris/
-    @default_to_BNode  # sacar bnode
+    @default_to_NoneNode  # si no puedo crear el uri, no se guarda la info de ese listing
     def _create_listing():
         return PR[f"{row['site']}_{row['listing_id']}_listing"]
-        # argenprop_12333_listing
-        # zonaprop_5345345ABC_listing
+        # debería ser:
         # ontologia/resources/lisitngs/argenprop_12333_listing
+        # encontrar algo mejor que el listing_id
 
     listing: Node = _create_listing()
     g.add((listing, RDF.type, PR.RealEstateListing))
