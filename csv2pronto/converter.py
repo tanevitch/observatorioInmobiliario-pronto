@@ -120,13 +120,7 @@ def add_listing(g: Graph, row: dict) -> Node:
 def add_price(g: Graph, value: float, currency: str, p_type: str) -> Node:
     """Add price to the graph `g` and return the price's `Node`."""
 
-    @default_to_BNode
-    def _create_price():
-        return PR[f"{value}_{currency}_{p_type}"]
-        # hacer independiente por cada listing
-        # https:.../pronto.owl#123.45_USD_BASE
-
-    price: Node = _create_price()
+    price: Node = BNode()
     g.add((price, RDF.type, GR.UnitPriceSpecification))
     g.add((price, GR.hasCurrencyValue, Float(value)))
     g.add((price, GR.hasCurrency, String(currency)))
