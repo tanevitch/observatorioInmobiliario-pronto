@@ -1,5 +1,7 @@
 """Helper structures for the `csv2pronto` module."""
 
+import enum
+import itertools
 from urllib.parse import quote
 
 from rdflib import BNode, Graph, Literal, Namespace, URIRef
@@ -40,6 +42,16 @@ class NoneNode(BNode):
     def __len__(self):
         return 0
 
+
+# Incrementals
+
+class Incrementals(enum.Enum):
+    """
+    Enumeration of `itertools.count`-like incrementals for each
+    class.
+    """
+    
+    REAL_ESTATE = itertools.count()
 
 # Wrappers considering None values
 
