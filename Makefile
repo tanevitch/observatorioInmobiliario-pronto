@@ -14,4 +14,4 @@ clean:
 	find . -name "__pycache__" -exec rm -fr {} +
 	find . -name "*.pyc" -delete
 	find . -name "*.pyo" -delete
-	rm -f data/* logs/*
+	rm -f ./out.ttl
