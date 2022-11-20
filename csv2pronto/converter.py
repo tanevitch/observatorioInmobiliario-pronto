@@ -16,13 +16,15 @@ from helpers import (
     DateTime,
     Double,
     Float,
+    Incremental,
     Integer,
     Node,
+    NoneNode,
     SafeGraph,
     SafeNamespace,
     String,
-    default_to_BNode,
     default_to_NoneNode,
+    default_to_incremental,
 )
 
 PR = SafeNamespace(
@@ -34,13 +36,21 @@ REC = SafeNamespace("https://w3id.org/rec/core/")
 BUILDING = SafeNamespace("https://w3id.org/rec/building/")
 
 
-def create_graph(row: dict) -> Graph:
-    """Return a graph `g` with the info on `row`."""
+def create_graph(context: Graph, row: dict) -> Graph:
+    """
+    Return a graph `g` with the info on `row`.
+
+    Args:
+        context (Graph): Graph with previously added info.
+        row (dict): Dictionary with the info to add.
+    """
+
+    row = {k: v for k, v in row.items() if v != ""}
 
     g: Graph = SafeGraph()
 
     listing = add_listing(g, row)
-    agent, account = add_agent(g, row)
+    agent, account = add_agent(context, g, row)
     real_estate = add_real_estate(g, row)
 
     g.add((listing, SIOC.has_creator, account))
@@ -57,12 +67,9 @@ def create_graph(row: dict) -> Graph:
 def add_listing(g: Graph, row: dict) -> Node:
     """Add listing to the graph `g` and return the listing's `Node`."""
 
-    @default_to_NoneNode  # si no puedo crear el uri, no se guarda la info de ese listing
+    @default_to_incremental(PR, Incremental.LISTING)
     def _create_listing():
         return PR[f"{row['site']}_{row['listing_id']}_listing"]
-        # debería ser:
-        # ontologia/resources/lisitngs/argenprop_12333_listing
-        # encontrar algo mejor que el listing_id
 
     listing: Node = _create_listing()
     g.add((listing, RDF.type, PR.RealEstateListing))
@@ -129,7 +136,7 @@ def add_price(g: Graph, value: float, currency: str, p_type: str) -> Node:
     return price
 
 
-def add_agent(g: Graph, row: dict) -> tuple[Node, Node]:
+def add_agent(context: Graph, g: Graph, row: dict) -> tuple[Node, Node]:
     """
     Add real estate agent to the graph `g` and return a tuple with the
     `Node`s of the agent and its user account.
@@ -137,11 +144,23 @@ def add_agent(g: Graph, row: dict) -> tuple[Node, Node]:
 
     @default_to_NoneNode
     def _create_agent():
-        return PR[row["advertiser_name"]]
+        if row.get("advertiser_name"):
+            return PR[row["advertiser_name"] + "_agent"]
 
-    @default_to_BNode  # si el id ya se uso y tengo el nombre del agente en otra parte, listo
+        account: Node = PR[f"{row['site']}_{row['advertiser_id']}_account"]
+        agent = context.value(account, SIOC.account_of) or NoneNode()
+        assert isinstance(agent, Node)
+        return agent
+
+    @default_to_NoneNode
     def _create_account():
-        return PR[f"{row['site']}_{row['advertiser_id']}"]
+        if row.get("advertiser_id"):
+            return PR[f"{row['site']}_{row['advertiser_id']}_account"]
+
+        agent: Node = PR[f"{row['advertiser_name']}_agent"]
+        account = context.value(agent, SIOC.account) or NoneNode()
+        assert isinstance(account, Node)
+        return account
 
     agent: Node = _create_agent()
     account: Node = _create_account()
@@ -149,8 +168,8 @@ def add_agent(g: Graph, row: dict) -> tuple[Node, Node]:
     g.add((agent, RDF.type, FOAF.Agent))
     g.add((account, RDF.type, SIOC.UserAccount))
 
-    g.add((account, SIOC.id, String(row["advertiser_id"])))
-    g.add((account, SIOC.name, String(row["advertiser_name"])))
+    g.add((account, SIOC.id, String(row.get("advertiser_id"))))
+    g.add((account, SIOC.name, String(row.get("advertiser_name"))))
     g.add((agent, FOAF.account, account))
     g.add((account, SIOC.account_of, agent))
 
@@ -163,13 +182,11 @@ def add_real_estate(g: Graph, row: dict) -> Node:
     `Node`.
     """
 
-    @default_to_BNode  # si no tengo site o listing_id: default_to_incremental
+    @default_to_incremental(PR, Incremental.REAL_ESTATE)
     def _create_real_estate():
         return PR[f"{row['site']}_{row['listing_id']}_real_estate"]
-        # real estate: argenprop_12333_real_estate
-        # listing: argenprop_12333_listing
 
-    @default_to_BNode  # idem real estate
+    @default_to_incremental(PR, Incremental.SPACE)
     def _create_space():
         return PR[f"{row['site']}_{row['listing_id']}_space"]
 
@@ -181,8 +198,8 @@ def add_real_estate(g: Graph, row: dict) -> Node:
 
     g.add((real_estate, REC.includes, space))
     g.add((space, SDO.address, String(row.get("address"))))
-    g.add((space, SDO.latitude, Double(row.get("latitude") or None)))
-    g.add((space, SDO.longitude, Double(row.get("longitude") or None)))
+    g.add((space, SDO.latitude, Double(row.get("latitude"))))
+    g.add((space, SDO.longitude, Double(row.get("longitude"))))
 
     if row.get("year_built"):
         g.add((space, SDO.yearBuilt, Integer(int(float(row.get("year_built", 0))))))
@@ -221,7 +238,7 @@ def add_real_estate(g: Graph, row: dict) -> Node:
                 add_surface(g, space, value, unit, s)
 
     # add amount of rooms
-    g.add((space, PR.has_amount_of_rooms, Integer(row["room_amnt"] or None)))
+    g.add((space, PR.has_amount_of_rooms, Integer(row.get("room_amnt"))))
     rooms: dict[str, Node] = {
         "bath": BUILDING.Bathroom,
         "garage": BUILDING.Garage,
@@ -235,15 +252,17 @@ def add_real_estate(g: Graph, row: dict) -> Node:
 
     @default_to_NoneNode
     def _create_neighborhood():
-        return PR[f"{row['province']}_{row['district']}_{row['neighborhood']}"]
+        return PR[
+            f"{row['province']}_{row['district']}_{row['neighborhood']}_neighborhood"
+        ]
 
     @default_to_NoneNode
     def _create_district():
-        return PR[f"{row['province']}_{row['district']}"]
+        return PR[f"{row['province']}_{row['district']}_district"]
 
     @default_to_NoneNode
     def _create_province():
-        return PR[row["province"]]
+        return PR[f"row['province']_province"]
 
     neighborhood: Node = _create_neighborhood()
     district: Node = _create_district()
@@ -253,9 +272,9 @@ def add_real_estate(g: Graph, row: dict) -> Node:
     g.add((district, RDF.type, REC.Region))
     g.add((province, RDF.type, REC.Region))
 
-    g.add((neighborhood, RDFS.label, String(row["neighborhood"])))
-    g.add((district, RDFS.label, String(row["district"])))
-    g.add((province, RDFS.label, String(row["province"])))
+    g.add((neighborhood, RDFS.label, String(row.get("neighborhood"))))
+    g.add((district, RDFS.label, String(row.get("district"))))
+    g.add((province, RDFS.label, String(row.get("province"))))
 
     g.add((space, REC.locatedIn, neighborhood))
     g.add((space, REC.locatedIn, district))
@@ -272,11 +291,11 @@ def add_real_estate(g: Graph, row: dict) -> Node:
 def add_surface(g: Graph, space: Node, value: float, unit: str, s_type: str) -> Node:
     """Add surface to the graph `g` and return the surface's `Node`."""
 
-    surface: Node = PR[f"{value}_{unit}_{s_type}"]
+    surface: Node = BNode()
 
     g.add((surface, RDF.type, PR.SizeSpecification))
     g.add((surface, PR.has_surface_value, Float(value)))
-    g.add((surface, GR.has_unit_of_measurement, String(value)))
+    g.add((surface, GR.has_unit_of_measurement, String(unit)))
     g.add((surface, PR.surface_type, String(s_type)))
 
     g.add((space, PR.hasSizeSpecification, surface))
@@ -295,13 +314,13 @@ def add_room(g: Graph, space: Node, row: dict, room: str, room_class: Node) -> N
         return
     amnt = int(amnt)
 
-    def _create_room():
+    def _create_room(i: int) -> Node:
         fragment = getattr(space, "fragment", None)
         if not fragment:
             return BNode()
         return PR[f"{fragment}_{room}_{i}"]
 
     for i in range(amnt):
-        r: Node = _create_room()
+        r: Node = _create_room(i)
         g.add((r, RDF.type, room_class))
         g.add((space, REC.hasPart, r))

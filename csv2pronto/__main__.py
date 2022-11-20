@@ -18,7 +18,7 @@ def main() -> None:
         graph.parse(args.ontology)
 
         for row in progressBar(csv_file):
-            graph += create_graph(row)
+            graph += create_graph(graph, row)
 
     graph.serialize(args.destination, format=args.format)
 
@@ -71,13 +71,21 @@ def progressBar(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
 
-    parser.add_argument("-s", "--source", help="CSV file to convert", required=True, type=str)
-    parser.add_argument("-d", "--destination", help="RDF file to write", required=True, type=str)
+    parser.add_argument(
+        "-s", "--source", help="CSV file to convert", required=True, type=str
+    )
+    parser.add_argument(
+        "-d", "--destination", help="RDF file to write", required=True, type=str
+    )
     # add ontology argument
-    parser.add_argument("-o", "--ontology", help="Ontology to use", required=True, type=str)
+    parser.add_argument(
+        "-o", "--ontology", help="Ontology to use", required=True, type=str
+    )
     # argument to know where to store the output graph
 
-    parser.add_argument("-f", "--format", help="RDF format of the output", required=True, type=str)
+    parser.add_argument(
+        "-f", "--format", help="RDF format of the output", required=True, type=str
+    )
 
     return parser.parse_args()
 

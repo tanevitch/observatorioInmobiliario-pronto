@@ -45,13 +45,23 @@ class NoneNode(BNode):
 
 # Incrementals
 
-class Incrementals(enum.Enum):
+
+class Incremental(enum.Enum):
     """
-    Enumeration of `itertools.count`-like incrementals for each
-    class.
+    Enumeration of an `itertools.count`-like incremental for each class.
     """
-    
+
     REAL_ESTATE = itertools.count()
+    SPACE = itertools.count()
+    LISTING = itertools.count()
+
+    def fragment(self) -> str:
+        """
+        Return the fragment part of a URI, consisting of the class name
+        in lowercase and the next value of the incremental.
+        """
+        return self.name.lower() + "_" + str(next(self.value))
+
 
 # Wrappers considering None values
 
@@ -127,6 +137,7 @@ def default_to_BNode(func):
 
     return wrapper
 
+
 def default_to_NoneNode(func):
     """
     Decorator that returns a `NoneNode` if the URI creation raises a
@@ -140,3 +151,21 @@ def default_to_NoneNode(func):
             return NoneNode()
 
     return wrapper
+
+
+def default_to_incremental(ns: Namespace, inc: Incremental):
+    """
+    Decorator that returns a URI with an incremental value if the URI
+    creation raises a `KeyError`.
+    """
+
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except KeyError:
+                return ns[inc.fragment()]
+
+        return wrapper
+
+    return decorator
