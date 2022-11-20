@@ -153,51 +153,6 @@ It is mainly based on the RealEstateCore and Semantically-Interlinked Online Com
     <!-- 
     ///////////////////////////////////////////////////////////////////////////////////////
     //
-    // Datatypes
-    //
-    ///////////////////////////////////////////////////////////////////////////////////////
-     -->
-
-    
-
-
-    <!-- http://www.opengis.net/ont/geosparql#gmlLiteral -->
-
-    <rdfs:Datatype rdf:about="http://www.opengis.net/ont/geosparql#gmlLiteral">
-        <rdfs:comment xml:lang="en">A GML serialization of a geometry object.
-
-GeoSPARQL is Copyright (c) 2012 Open Geospatial Consortium, Inc. All Rights Reserved. http://www.opengeospatial.org/ogc/document.</rdfs:comment>
-        <rdfs:label xml:lang="en">GML Literal</rdfs:label>
-    </rdfs:Datatype>
-    
-
-
-    <!-- http://www.opengis.net/ont/geosparql#wktLiteral -->
-
-    <rdfs:Datatype rdf:about="http://www.opengis.net/ont/geosparql#wktLiteral">
-        <rdfs:comment xml:lang="en">A Well-known Text serialization of a geometry object.
-
-GeoSPARQL is Copyright (c) 2012 Open Geospatial Consortium, Inc. All Rights Reserved. http://www.opengeospatial.org/ogc/document.</rdfs:comment>
-        <rdfs:label xml:lang="en">Well-known Text Literal</rdfs:label>
-    </rdfs:Datatype>
-    
-
-
-    <!-- http://www.w3.org/2001/XMLSchema#duration -->
-
-    <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#duration"/>
-    
-
-
-    <!-- http://www.w3.org/2001/XMLSchema#time -->
-
-    <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#time"/>
-    
-
-
-    <!-- 
-    ///////////////////////////////////////////////////////////////////////////////////////
-    //
     // Object Properties
     //
     ///////////////////////////////////////////////////////////////////////////////////////
