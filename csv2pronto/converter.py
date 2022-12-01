@@ -15,6 +15,7 @@ from helpers import (
     Boolean,
     DateTime,
     Double,
+    Faker,
     Float,
     Incremental,
     Integer,
@@ -46,6 +47,7 @@ def create_graph(context: Graph, row: dict) -> Graph:
     """
 
     row = {k: v for k, v in row.items() if v != ""}
+    row = Faker.anonymize(row)
 
     g: Graph = SafeGraph()
 
@@ -82,11 +84,12 @@ def add_listing(g: Graph, row: dict) -> Node:
     ###
 
     if row.get("transaction"):
-        buisness_func = GR.Sell if row["transaction"] == "Venta" else GR.LeaseOut
+        buisness_func = GR.Sell if row["transaction"].lower() == "venta" else GR.LeaseOut
         g.add((listing, GR.hasBuisnessFunction, buisness_func))
 
     ###
 
+    # remove?
     site: Node = PR[row["site"]]
     g.add((listing, SIOC.has_space, site))
     g.add((site, SIOC.space_of, listing))
@@ -222,10 +225,11 @@ def add_real_estate(g: Graph, row: dict) -> Node:
     # add features
     features: dict = ast.literal_eval(row.get("features") or "{}")
     for feature, value in features.items():
-        f: Node = PR[feature]
+        f: Node = PR[f"feature_{feature}_{value}"]
         g.add((f, RDF.type, PR.Feature))
         g.add((space, PR.has_feature, f))
-        g.add((f, RDFS.label, String(feature)))
+        g.add((f, RDFS.label, String(f"{feature}: {value}")))
+        g.add((f, DC.title, String(feature)))
         g.add((f, PR.has_value, String(value)))
 
     # add surfaces
