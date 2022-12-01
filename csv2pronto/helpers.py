@@ -1,5 +1,6 @@
 """Helper structures for the `csv2pronto` module."""
 
+from datetime import datetime
 import enum
 import itertools
 from urllib.parse import quote
@@ -46,6 +47,11 @@ class NoneNode(BNode):
 # Incrementals
 
 
+def timestamp() -> str:
+    "Returns the current timestamp as a str, leaving only the digits."
+    return str(datetime.now().timestamp()).replace(".", "")
+
+
 class Incremental(enum.Enum):
     """
     Enumeration of an `itertools.count`-like incremental for each class.
@@ -60,7 +66,7 @@ class Incremental(enum.Enum):
         Return the fragment part of a URI, consisting of the class name
         in lowercase and the next value of the incremental.
         """
-        return self.name.lower() + "_" + str(next(self.value))
+        return self.name.lower() + "_" + timestamp() + "_" + str(next(self.value))
 
 
 # Wrappers considering None values
