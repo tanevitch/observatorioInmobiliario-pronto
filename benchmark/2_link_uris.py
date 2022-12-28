@@ -2,6 +2,7 @@
 
 
 import csv
+import sys
 
 
 def create_uri(id: str, url: str) -> str:
@@ -15,9 +16,24 @@ def create_uri(id: str, url: str) -> str:
     return f"https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#listing_{site}_{id}"
 
 
-with open("data/duplicados_seguros.csv", "r") as dups, open(
-    "data/data.csv", "r"
-) as data, open("data/uris_duplicados.csv", "w") as uris:
+
+try:
+    dups_file = sys.argv[1]
+except:
+    dups_file = "data/train.csv"
+
+try:
+    data_file = sys.argv[2]
+except:
+    data_file = "data/clean_data.csv"
+
+try:
+    new_file = sys.argv[3]
+except:
+    new_file = "data/uris_duplicados.csv"
+
+
+with open(dups_file, "r") as dups, open(data_file, "r") as data, open(new_file, "w") as uris:
 
     reader_dups = csv.reader(dups)
     reader_data = csv.DictReader(data)
