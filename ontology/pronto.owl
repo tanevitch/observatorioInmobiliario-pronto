@@ -264,10 +264,41 @@ Recommended retail prices etc. can be marked by the gr:priceType property of the
     
 
 
+    <!-- http://schema.org/seller -->
+
+    <owl:ObjectProperty rdf:about="http://schema.org/seller">
+        <rdfs:range rdf:resource="http://xmlns.com/foaf/0.1/Agent"/>
+        <rdfs:comment xml:lang="en">An entity which offers (sells / leases / lends / loans) the services / goods. A seller may also be a provider.</rdfs:comment>
+        <rdfs:label xml:lang="en">seller</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
     <!-- http://xmlns.com/foaf/0.1/account -->
 
     <owl:ObjectProperty rdf:about="http://xmlns.com/foaf/0.1/account">
         <rdfs:label xml:lang="en">account</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://xmlns.com/foaf/0.1/made -->
+
+    <owl:ObjectProperty rdf:about="http://xmlns.com/foaf/0.1/made">
+        <owl:inverseOf rdf:resource="http://xmlns.com/foaf/0.1/maker"/>
+        <rdfs:domain rdf:resource="http://xmlns.com/foaf/0.1/Agent"/>
+        <rdfs:comment xml:lang="en">Something that was made by this agent.</rdfs:comment>
+        <rdfs:label xml:lang="en">made</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://xmlns.com/foaf/0.1/maker -->
+
+    <owl:ObjectProperty rdf:about="http://xmlns.com/foaf/0.1/maker">
+        <rdfs:range rdf:resource="http://xmlns.com/foaf/0.1/Agent"/>
+        <rdfs:comment xml:lang="en">An agent that made this thing.</rdfs:comment>
+        <rdfs:label xml:lang="en">maker</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -290,27 +321,6 @@ Recommended retail prices etc. can be marked by the gr:priceType property of the
 
 The specific surface measured can be marked by the gr:sizeType property of the pr:SizeSpecification.</rdfs:comment>
         <rdfs:label xml:lang="en">has size specification (0..*)</rdfs:label>
-    </owl:ObjectProperty>
-    
-
-
-    <!-- https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#managed_by -->
-
-    <owl:ObjectProperty rdf:about="https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#managed_by">
-        <owl:inverseOf rdf:resource="https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#manages"/>
-        <rdfs:range rdf:resource="https://w3id.org/rec/core/Agent"/>
-        <rdfs:comment xml:lang="en">Property that defines the manager or advertiser of a given entity.</rdfs:comment>
-        <rdfs:label xml:lang="en">managed by</rdfs:label>
-    </owl:ObjectProperty>
-    
-
-
-    <!-- https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#manages -->
-
-    <owl:ObjectProperty rdf:about="https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#manages">
-        <rdfs:domain rdf:resource="https://w3id.org/rec/core/Agent"/>
-        <rdfs:comment xml:lang="en">Indicates that an agent is the manager of a given entity, e.g., a Company manages some Real Estate Listing. This includes the act of advertising some Real Property through a real estate listing in a dedicated web site.</rdfs:comment>
-        <rdfs:label xml:lang="en">manages</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -503,6 +513,19 @@ This property is semantically equivalent to rdfs:comment and just meant as a han
     
 
 
+    <!-- http://purl.org/goodrelations/v1#hasValue -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.org/goodrelations/v1#hasValue">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://purl.org/goodrelations/v1#QuantitativeValue"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+        <rdfs:comment xml:lang="en">This subproperty specifies that the upper and lower limit of the given gr:QuantitativeValue are identical and have the respective value. It is a shortcut for such cases where a quantitative property is (at least practically) a single point value and not an interval.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/goodrelations/v1"/>
+        <rdfs:label xml:lang="en">has value (0..1)</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://purl.org/goodrelations/v1#priceType -->
 
     <owl:DatatypeProperty rdf:about="http://purl.org/goodrelations/v1#priceType">
@@ -571,6 +594,8 @@ INVOICE: The invoice price, mostly used in the car industry - this is the price 
 
     <owl:DatatypeProperty rdf:about="http://rdfs.org/sioc/ns#read_at">
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#dateTime"/>
+        <rdfs:isDefinedBy rdf:resource="http://rdfs.org/sioc/ns#"/>
+        <rdfs:label xml:lang="en">read at</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -604,18 +629,7 @@ GeoSPARQL is Copyright (c) 2012 Open Geospatial Consortium, Inc. All Rights Rese
 
     <owl:DatatypeProperty rdf:about="https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#has_number_of_rooms">
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
-    </owl:DatatypeProperty>
-    
-
-
-    <!-- https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#has_surface_value -->
-
-    <owl:DatatypeProperty rdf:about="https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#has_surface_value">
-        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
-        <rdfs:domain rdf:resource="https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#SizeSpecification"/>
-        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
-        <rdfs:comment xml:lang="en">The size of the building according to a measurement type.</rdfs:comment>
-        <rdfs:label xml:lang="en">has surface value</rdfs:label>
+        <rdfs:label xml:lang="en">has number of rooms</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -687,14 +701,14 @@ GeoSPARQL is Copyright (c) 2012 Open Geospatial Consortium, Inc. All Rights Rese
     
 
 
-    <!-- https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#surface_type -->
+    <!-- https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#size_type -->
 
-    <owl:DatatypeProperty rdf:about="https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#surface_type">
+    <owl:DatatypeProperty rdf:about="https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#size_type">
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
         <rdfs:domain rdf:resource="https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#SizeSpecification"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
         <rdfs:comment xml:lang="en">The type of surface measured by a SizeSpecification, e.g. &quot;Covered&quot;, &quot;Total&quot;.</rdfs:comment>
-        <rdfs:label xml:lang="en">surface type (0..1)</rdfs:label>
+        <rdfs:label xml:lang="en">size type (0..1)</rdfs:label>
     </owl:DatatypeProperty>
     
 
@@ -890,6 +904,19 @@ Compatibility with schema.org: This class is a superclass to http://schema.org/O
     
 
 
+    <!-- http://purl.org/goodrelations/v1#QuantitativeValue -->
+
+    <owl:Class rdf:about="http://purl.org/goodrelations/v1#QuantitativeValue">
+        <rdfs:comment xml:lang="en">A quantitative value is a numerical interval that represents the range of a certain gr:quantitativeProductOrServiceProperty in terms of the lower and upper bounds for a particular gr:ProductOrService. It is to be interpreted in combination with the respective unit of measurement. Most quantitative values are intervals even if they are in practice often treated as a single point value.
+
+Example: a weight between 10 and 25 kilogramms, a length between 10 and 15 milimeters.
+
+Compatibility with schema.org: This class is equivalent to http://schema.org/Quantity.</rdfs:comment>
+        <rdfs:label xml:lang="en">Quantitative value</rdfs:label>
+    </owl:Class>
+    
+
+
     <!-- http://purl.org/goodrelations/v1#UnitPriceSpecification -->
 
     <owl:Class rdf:about="http://purl.org/goodrelations/v1#UnitPriceSpecification">
@@ -1047,6 +1074,7 @@ Note 2: For Google, attaching a gr:validThrough statement to a gr:UnitPriceSpeci
     <!-- https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#SizeSpecification -->
 
     <owl:Class rdf:about="https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#SizeSpecification">
+        <rdfs:subClassOf rdf:resource="http://purl.org/goodrelations/v1#QuantitativeValue"/>
         <rdfs:comment xml:lang="en">A unit price specification is a conceptual entity that specifies the size of a given rec:Space. A space may be linked to multiple size specifications that specify alternative sizes for different types of measurements (e.g. total or covered surface).</rdfs:comment>
         <rdfs:label xml:lang="en">Size specification</rdfs:label>
     </owl:Class>
