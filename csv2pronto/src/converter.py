@@ -5,28 +5,15 @@ from contextlib import suppress
 
 import dateutil.parser as dateparser
 from rdflib import BNode, Graph, URIRef
-from rdflib.namespace._DC import DC
-from rdflib.namespace._FOAF import FOAF
-from rdflib.namespace._RDF import RDF
-from rdflib.namespace._RDFS import RDFS
-from rdflib.namespace._SDO import SDO
+from rdflib.namespace import DC, FOAF, RDF, RDFS, SDO
 
-from helpers import (
-    Boolean,
-    DateTime,
-    Double,
-    Faker,
-    Float,
-    Incremental,
-    Integer,
-    Node,
-    NoneNode,
-    SafeGraph,
-    SafeNamespace,
-    String,
-    default_to_NoneNode,
-    default_to_incremental,
-)
+from . import Node
+from .faker.faker import Faker
+from .incrementals.incrementals import Incremental
+from .null_objects.factory import Boolean, DateTime, Double, Float, Integer, String
+from .null_objects.null_objects import NoneNode
+from .null_objects.safe_objects import SafeGraph, SafeNamespace
+from .wrappers.wrappers import default_to_incremental, default_to_NoneNode
 
 PR = SafeNamespace(
     "https://raw.githubusercontent.com/fdioguardi/pronto/main/ontology/pronto.owl#"
@@ -57,6 +44,8 @@ def create_graph(context: Graph, row: dict) -> Graph:
 
     g.add((listing, SIOC.has_creator, account))
     g.add((account, SIOC.creator_of, listing))
+    g.add((listing, FOAF.maker, agent))
+    g.add((agent, FOAF.made, listing))
 
     g.add((listing, SIOC.about, real_estate))
 
@@ -84,7 +73,9 @@ def add_listing(g: Graph, row: dict) -> Node:
     ###
 
     if row.get("transaction"):
-        buisness_func = GR.Sell if row["transaction"].lower() == "venta" else GR.LeaseOut
+        buisness_func = (
+            GR.Sell if row["transaction"].lower() == "venta" else GR.LeaseOut
+        )
         g.add((listing, GR.hasBuisnessFunction, buisness_func))
 
     ###
@@ -298,9 +289,9 @@ def add_surface(g: Graph, space: Node, value: float, unit: str, s_type: str) -> 
     surface: Node = BNode()
 
     g.add((surface, RDF.type, PR.SizeSpecification))
-    g.add((surface, PR.has_surface_value, Float(value)))
-    g.add((surface, GR.has_unit_of_measurement, String(unit)))
-    g.add((surface, PR.surface_type, String(s_type)))
+    g.add((surface, GR.hasValue, Float(value)))
+    g.add((surface, GR.hasUnitOfMeasurement, String(unit)))
+    g.add((surface, PR.size_type, String(s_type)))
 
     g.add((space, PR.hasSizeSpecification, surface))
 

@@ -2,11 +2,10 @@
 
 import argparse
 import csv
-from io import TextIOWrapper
 
 import rdflib
-
-from converter import create_graph
+from src.converter import create_graph
+from tqdm import tqdm
 
 
 def main() -> None:
@@ -17,55 +16,15 @@ def main() -> None:
 
         graph.parse(args.ontology)
 
-        for row in progressBar(csv_file):
-            graph += create_graph(graph, row)
+        total_rows = sum(1 for _ in csv.reader(csv_file))
+        csv_file.seek(0)
+
+        with tqdm(total=total_rows, desc="Converting CSV to RDF") as pbar:
+            for row in csv.DictReader(csv_file):
+                graph += create_graph(graph, row)
+                pbar.update(1)
 
     graph.serialize(args.destination, format=args.format)
-
-
-def progressBar(
-    file: TextIOWrapper,
-    prefix: str = "Progress:",
-    suffix: str = "Complete",
-    decimals: int = 1,
-    length: int = 50,
-    fill: str = "█",
-    printEnd: str = "\r",
-):
-    """
-    Call in a loop to create terminal progress bar
-    @params:
-        file        - Required  : file object (TextIOWrapper)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
-        length      - Optional  : character length of bar (Int)
-        fill        - Optional  : bar fill character (Str)
-        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
-    """
-
-    # Calculate the number of lines in the file
-    total = sum(1 for _ in csv.DictReader(file))
-    file.seek(0)
-    csv_reader = csv.DictReader(file)
-
-    # Progress Bar Printing Function
-    def printProgressBar(iteration):
-        percent = ("{0:." + str(decimals) + "f}").format(
-            100 * (iteration / float(total))
-        )
-        filledLength = int(length * iteration // total)
-        bar = fill * filledLength + "-" * (length - filledLength)
-        print(f"\r{prefix} |{bar}| {percent}% {suffix}", end=printEnd)
-
-    # Initial Call
-    printProgressBar(0)
-    # Update Progress Bar
-    for i, item in enumerate(csv_reader):
-        yield item
-        printProgressBar(i + 1)
-    # Print New Line on Complete
-    print()
 
 
 def parse_args() -> argparse.Namespace:
@@ -77,11 +36,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-d", "--destination", help="RDF file to write", required=True, type=str
     )
-    # add ontology argument
+
     parser.add_argument(
         "-o", "--ontology", help="Ontology to use", required=True, type=str
     )
-    # argument to know where to store the output graph
 
     parser.add_argument(
         "-f", "--format", help="RDF format of the output", required=True, type=str
