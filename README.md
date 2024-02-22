@@ -196,10 +196,10 @@ python csv2pronto.py -s <archivo_csv_fuente> -d <archivo_rdf_destino> -o <archiv
 
 ### Arguments
 
-`-s`, `--source`: Path to the CSV file to be converted.
-`-d`, `--destination`: Path to the RDF file to be written.
-`-o`, `--ontology`: Path to the ontology to be used.
-`-f`, `--format`: Format of the output graph (e.g., xml, ttl, nt, n3).
+- `-s`, `--source`: Path to the CSV file to be converted.
+- `-d`, `--destination`: Path to the RDF file to be written.
+- `-o`, `--ontology`: Path to the ontology to be used.
+- `-f`, `--format`: Format of the output graph (e.g., xml, ttl, nt, n3).
 
 ## Example
 
