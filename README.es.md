@@ -120,10 +120,10 @@ python csv2pronto.py -s <archivo_csv_fuente> -d <archivo_rdf_destino> -o <archiv
 
 ### Argumentos
 
-`-s`, `--source`: Ruta al archivo CSV que se va a convertir.
-`-d`, `--destination`: Ruta al archivo RDF donde se escribirá.
-`-o`, `--ontology`: Ruta a la ontología que se utilizará.
-`-f`, `--format`: Formato del grafo de salida (por ejemplo, xml, ttl, nt, n3).
+- `-s`, `--source`: Ruta al archivo CSV que se va a convertir.
+- `-d`, `--destination`: Ruta al archivo RDF donde se escribirá.
+- `-o`, `--ontology`: Ruta a la ontología que se utilizará.
+- `-f`, `--format`: Formato del grafo de salida (por ejemplo, xml, ttl, nt, n3).
 
 ## Ejemplo
 
