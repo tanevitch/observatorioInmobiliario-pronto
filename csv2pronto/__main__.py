@@ -21,7 +21,7 @@ def main() -> None:
 
         with tqdm(total=total_rows, desc="Converting CSV to RDF") as pbar:
             for row in csv.DictReader(csv_file):
-                graph += create_graph(graph, row)
+                graph += create_graph(row)
                 pbar.update(1)
 
     graph.serialize(args.destination, format=args.format)

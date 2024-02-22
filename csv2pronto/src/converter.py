@@ -24,12 +24,11 @@ REC = SafeNamespace("https://w3id.org/rec/core/")
 BUILDING = SafeNamespace("https://w3id.org/rec/building/")
 
 
-def create_graph(context: Graph, row: dict) -> Graph:
+def create_graph(row: dict) -> Graph:
     """
     Return a graph `g` with the info on `row`.
 
     Args:
-        context (Graph): Graph with previously added info.
         row (dict): Dictionary with the info to add.
     """
 
@@ -39,7 +38,7 @@ def create_graph(context: Graph, row: dict) -> Graph:
     g: Graph = SafeGraph()
 
     listing = add_listing(g, row)
-    agent, account = add_agent(context, g, row)
+    agent, account = add_agent(g, row)
     real_estate = add_real_estate(g, row)
 
     g.add((listing, SIOC.has_creator, account))
@@ -130,7 +129,7 @@ def add_price(g: Graph, value: float, currency: str, p_type: str) -> Node:
     return price
 
 
-def add_agent(context: Graph, g: Graph, row: dict) -> tuple[Node, Node]:
+def add_agent(g: Graph, row: dict) -> tuple[Node, Node]:
     """
     Add real estate agent to the graph `g` and return a tuple with the
     `Node`s of the agent and its user account.
@@ -138,23 +137,11 @@ def add_agent(context: Graph, g: Graph, row: dict) -> tuple[Node, Node]:
 
     @default_to_NoneNode
     def _create_agent():
-        if row.get("advertiser_name"):
-            return PR[f"agent_{row['advertiser_name']}"]
-
-        account: Node = PR[f"account_{row['site']}_{row['advertiser_id']}"]
-        agent = context.value(account, SIOC.account_of) or NoneNode()
-        assert isinstance(agent, Node)
-        return agent
+        return PR[f"agent_{row['advertiser_name']}"]
 
     @default_to_NoneNode
     def _create_account():
-        if row.get("advertiser_id"):
-            return PR[f"account_{row['site']}_{row['advertiser_id']}"]
-
-        agent: Node = PR[f"agent_{row['advertiser_name']}"]
-        account = context.value(agent, SIOC.account) or NoneNode()
-        assert isinstance(account, Node)
-        return account
+        return PR[f"account_{row['site']}_{row['advertiser_id']}"]
 
     agent: Node = _create_agent()
     account: Node = _create_account()
@@ -198,15 +185,14 @@ def add_real_estate(g: Graph, row: dict) -> Node:
     if row.get("year_built"):
         g.add((space, SDO.yearBuilt, Integer(int(float(row.get("year_built", 0))))))
 
-    is_new_property = row.get("is_new_property")
-    is_finished = row.get("is_finished")
-    is_studio_apartment = row.get("is_studio_apartment")
-    if is_new_property != "":
-        g.add((space, PR.is_brand_new, Boolean(is_new_property)))
-    if is_finished != "":
-        g.add((space, PR.is_finished, Boolean(is_finished)))
-    if is_studio_apartment != "":
-        g.add((space, PR.is_studio_apartment, Boolean(row.get("is_studio_apartment"))))
+    property_mapping = {
+        "is_new_property": PR.is_brand_new,
+        "is_finished": PR.is_finished,
+        "is_studio_apartment": PR.is_studio_apartment,
+    }
+
+    for name, p in property_mapping.items():
+        g.add((space, p, Boolean(None if row.get(name) == "" else row.get(name))))
 
     g.add((space, PR.luminosity, String(row.get("luminosity"))))
     g.add((space, PR.orientation, String(row.get("orientation"))))
