@@ -19,10 +19,6 @@ def main() -> None:
         total_rows = sum(1 for _ in csv.reader(csv_file))
         csv_file.seek(0)
         graph = Parallel(n_jobs=-1, backend='multiprocessing')(delayed(create_graph)(row) for row,_ in zip(csv.DictReader(csv_file), tqdm(range(total_rows))))
-#        with tqdm(total=total_rows, desc="Converting CSV to RDF") as pbar:
-#            for row in csv.DictReader(csv_file):
-#                graph += create_graph(row)
-#                pbar.update(1)
 
     graph.serialize(args.destination, format=args.format)
 
