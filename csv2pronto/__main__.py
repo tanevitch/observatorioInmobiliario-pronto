@@ -20,14 +20,9 @@ def main() -> None:
         total_rows = sum(1 for _ in csv.reader(csv_file))
         csv_file.seek(0)
         
-        chunksize = 1000
+        chunksize = 3000
 
-        graph_list = Parallel(n_jobs=-1, backend='multiprocessing')(delayed(create_graph_from_chunk)(row) for row,_ in zip(pd.read_csv(csv_file, chunksize=chunksize, iterator=True, dialect='excel', keep_default_na=False), tqdm(range(total_rows//chunksize))))
-    graph = graph_list[0]
-    for g in graph_list[1:]:
-        graph += g
-    graph.serialize(args.destination, format=args.format)
-    print(len(graph.all_nodes()))
+        Parallel(n_jobs=-1, backend='multiprocessing')(delayed(create_graph_from_chunk)(row, graph, idx, args.destination, args.format) for row, idx, _ in zip(pd.read_csv(csv_file, chunksize=chunksize, iterator=True, dialect='excel', keep_default_na=False), list(range(total_rows//chunksize)), tqdm(range(total_rows//chunksize))))
 
 
 def parse_args() -> argparse.Namespace:
