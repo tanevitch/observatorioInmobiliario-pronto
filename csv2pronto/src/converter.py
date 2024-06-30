@@ -2,7 +2,7 @@
 
 import ast
 from contextlib import suppress
-
+import pandas as pd
 import dateutil.parser as dateparser
 from rdflib import BNode, Graph, URIRef
 from rdflib.namespace import DC, FOAF, RDF, RDFS, SDO
@@ -22,6 +22,17 @@ SIOC = SafeNamespace("http://rdfs.org/sioc/ns#")
 GR = SafeNamespace("http://purl.org/goodrelations/v1#")
 REC = SafeNamespace("https://w3id.org/rec/core/")
 BUILDING = SafeNamespace("https://w3id.org/rec/building/")
+
+def create_graph_from_chunk(df: pd.DataFrame, graph, idx, destination, format) -> Graph:
+    """
+    Writes a partial graph `g` with the info of a chunk of rows.
+
+    Args:
+        df (pd.DataFrame): a Pandas Dataframe with the info to add to `g`.
+    """
+    for i in range(len(df)):
+        graph += create_graph(df.iloc[i].to_dict())
+    graph.serialize(destination+f'.{idx:03}', format=format)
 
 
 def create_graph(row: dict) -> Graph:

@@ -2,9 +2,10 @@
 
 import argparse
 import csv
-
+import pandas as pd
+import itertools
 import rdflib
-from src.converter import create_graph
+from src.converter import create_graph_from_chunk
 from tqdm import tqdm
 from joblib import Parallel, delayed
 
@@ -18,9 +19,10 @@ def main() -> None:
 
         total_rows = sum(1 for _ in csv.reader(csv_file))
         csv_file.seek(0)
-        graph = Parallel(n_jobs=-1, backend='multiprocessing')(delayed(create_graph)(row) for row,_ in zip(csv.DictReader(csv_file), tqdm(range(total_rows))))
+        
+        chunksize = 3000
 
-    graph.serialize(args.destination, format=args.format)
+        Parallel(n_jobs=-1, backend='multiprocessing')(delayed(create_graph_from_chunk)(row, graph, idx, args.destination, args.format) for row, idx, _ in zip(pd.read_csv(csv_file, chunksize=chunksize, iterator=True, dialect='excel', keep_default_na=False, dtype=str), list(range(total_rows//chunksize)), tqdm(range(total_rows//chunksize))))
 
 
 def parse_args() -> argparse.Namespace:
