@@ -22,7 +22,7 @@ def main() -> None:
         
         chunksize = 3000
 
-        Parallel(n_jobs=-1, backend='multiprocessing')(delayed(create_graph_from_chunk)(row, graph, idx, args.destination, args.format) for row, idx, _ in zip(pd.read_csv(csv_file, chunksize=chunksize, iterator=True, dialect='excel', keep_default_na=False), list(range(total_rows//chunksize)), tqdm(range(total_rows//chunksize))))
+        Parallel(n_jobs=-1, backend='multiprocessing')(delayed(create_graph_from_chunk)(row, graph, idx, args.destination, args.format) for row, idx, _ in zip(pd.read_csv(csv_file, chunksize=chunksize, iterator=True, dialect='excel', keep_default_na=False, dtype=str), list(range(total_rows//chunksize)), tqdm(range(total_rows//chunksize))))
 
 
 def parse_args() -> argparse.Namespace:
