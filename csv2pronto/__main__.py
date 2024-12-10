@@ -17,13 +17,8 @@ def main() -> None:
 
         graph.parse(args.ontology)
 
-        total_rows = sum(1 for _ in csv.reader(csv_file))
-        csv_file.seek(0)
-        
-        chunksize = 3000
-
-        Parallel(n_jobs=-1, backend='multiprocessing')(delayed(create_graph_from_chunk)(row, graph, idx, args.destination, args.format) for row, idx, _ in zip(pd.read_csv(csv_file, chunksize=chunksize, iterator=True, dialect='excel', keep_default_na=False, dtype=str), list(range(total_rows//chunksize)), tqdm(range(total_rows//chunksize))))
-
+        for elem in pd.read_csv(csv_file, iterator=True, dialect='excel', keep_default_na=False, dtype=str):
+            create_graph_from_chunk(elem, graph, args.destination, args.format)
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
