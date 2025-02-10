@@ -104,12 +104,13 @@ def add_listing(g: Graph, row: dict) -> Node:
         
 
     if row.get("price") and row.get("currency"):
-        price: Node = add_price(g, row["price"], row["currency"], "BASE", dateparser.parse(row["date_extracted"]))
+        price: Node = add_price(g, listing, row["price"], row["currency"], "BASE", dateparser.parse(row["date_extracted"]))
         g.add((listing, IO.hasFeature, price))
 
     if row.get("maintenance_fee") and row.get("maintenance_fee_currency"):
         expenses: Node = add_price(
             g,
+            listing,
             row.get("maintenance_fee", ""),
             row.get("maintenance_fee_currency", ""),
             "MAINTENANCE FEE",
@@ -123,11 +124,11 @@ def add_listing(g: Graph, row: dict) -> Node:
     return listing
 
 
-def add_price(g: Graph, value: float, currency: str, p_type: str, date: datetime|None) -> Node:
+def add_price(g: Graph, listing:Node, value: float, currency: str, p_type: str, date: datetime|None) -> Node:
     """Add price to the graph `g` and return the price's `Node`."""
 
     priceValue: Node = BNode()
-    featurePrice: Node = BNode()
+    featurePrice: Node = create_feature(listing, "price")
     temporalFeaturePrice: Node = BNode()
     dateNode: Node = BNode()
     
